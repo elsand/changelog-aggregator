@@ -25,7 +25,14 @@ def main(argv: list[str]) -> int:
     combined_input = build_prompt(run_file)
     with output_file.open("w", encoding="utf-8") as output_handle:
         completed = subprocess.run(
-            ["claude", "-p", "Follow the supplied instructions and return only the Markdown digest."],
+            [
+                "claude",
+                "-p",
+                "--tools",
+                "",
+                "--no-session-persistence",
+                "Follow the supplied instructions and return only the Markdown digest.",
+            ],
             input=combined_input,
             text=True,
             stdout=output_handle,

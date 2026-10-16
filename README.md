@@ -112,12 +112,6 @@ Set the aggregation file you want to summarize:
 RUN=.changelog-aggregator/runs/changelog-aggregation-2026-W20.txt
 ```
 
-Run Codex non-interactively and write the final Markdown message to `digest.md`:
-
-```bash
-python3 digest_with_codex.py "$RUN" digest.md
-```
-
 Run Claude Code non-interactively and redirect the Markdown output to
 `digest.md`:
 
@@ -125,17 +119,17 @@ Run Claude Code non-interactively and redirect the Markdown output to
 python3 digest_with_claude.py "$RUN" digest.md
 ```
 
-Both helper scripts:
-- load `prompt.txt`
-- replace `{{REPONAMES}}` using only overridden mappings from `reponames.json`, where an override means `key != value`
-- append the aggregation run content
-- invoke the selected agent in non-interactive mode
+The helper script:
+- loads `prompt.txt`
+- replaces `{{REPONAMES}}` using only overridden mappings from `reponames.json`, where an override means `key != value`
+- appends the aggregation run content
+- invokes `claude -p` non-interactively with all tools disabled
 
 The shared prompt builder can also be used directly, including from GitHub
-Actions before invoking `openai/codex-action`:
+Actions or with another LLM:
 
 ```bash
-python3 build_digest_prompt.py "$RUN" .generated/codex-digest-prompt.md
+python3 build_digest_prompt.py "$RUN" .generated/digest-prompt.md
 ```
 
 Set `GITHUB_TOKEN` to increase GitHub API limits.
@@ -145,8 +139,8 @@ Set `GITHUB_TOKEN` to increase GitHub API limits.
 The repository includes reusable workflows:
 
 - `aggregate-changelogs.yml`: runs `changelog_aggregator.py` for `altinn`, restores/saves `.changelog-aggregator/changelogs.json` through GitHub Actions cache, and uploads `changelog-index` and `aggregation-output` artifacts.
-- `build-digest-codex.yml`: downloads `aggregation-output`, builds a Codex prompt with `build_digest_prompt.py`, runs `openai/codex-action@v1`, and uploads `codex-digest`.
-- `post-digest-slack.yml`: downloads `codex-digest` and posts it to Slack.
+- `build-digest-claude.yml`: downloads `aggregation-output`, installs Claude Code, runs `digest_with_claude.py`, and uploads `claude-digest`.
+- `post-digest-slack.yml`: downloads `claude-digest` and posts it to Slack.
 
 Two orchestration workflows are also included:
 
@@ -156,5 +150,5 @@ Two orchestration workflows are also included:
 Required repository secrets:
 
 - `ALTINN_GITHUB_TOKEN`: GitHub token used by the aggregator when calling the GitHub API.
-- `OPENAI_API_KEY`: used by `openai/codex-action@v1`.
+- `CLAUDE_CODE_OAUTH_TOKEN`: Claude subscription token used by `claude -p`. Generate it with `claude setup-token` (valid for one year) and rotate before it expires.
 - `SLACK_WEBHOOK_URL`: Slack incoming webhook URL.

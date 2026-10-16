@@ -33,19 +33,19 @@ jobs:
 
   build-digest:
     needs: aggregate
-    uses: ./.github/workflows/build-digest-codex.yml
+    uses: ./.github/workflows/build-digest-claude.yml
     with:
       aggregation_artifact_name: aggregation-output
       output_file: digest.md
     secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   post-slack:
     needs: build-digest
     if: ${{ inputs.post_to_slack }}
     uses: ./.github/workflows/post-digest-slack.yml
     with:
-      digest_artifact_name: codex-digest
+      digest_artifact_name: claude-digest
       digest_file: digest.md
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

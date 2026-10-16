@@ -6,7 +6,7 @@ on:
       digest_artifact_name:
         description: Artifact containing the Markdown digest.
         required: false
-        default: codex-digest
+        default: claude-digest
         type: string
       artifact_run_id:
         description: Workflow run ID containing the digest artifact. Defaults to the current run.
@@ -26,7 +26,7 @@ on:
       digest_artifact_name:
         description: Artifact containing the Markdown digest.
         required: false
-        default: codex-digest
+        default: claude-digest
         type: string
       artifact_run_id:
         description: Workflow run ID containing the digest artifact. Leave empty for the current run.
