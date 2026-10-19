@@ -140,7 +140,7 @@ The repository includes reusable workflows:
 
 - `aggregate-changelogs.yml`: runs `changelog_aggregator.py` for `altinn`, restores/saves `.changelog-aggregator/changelogs.json` through GitHub Actions cache, and uploads `changelog-index` and `aggregation-output` artifacts.
 - `build-digest-claude.yml`: downloads `aggregation-output`, installs Claude Code, runs `digest_with_claude.py`, and uploads `claude-digest`.
-- `post-digest-slack.yml`: downloads `claude-digest` and posts it to Slack.
+- `post-digest-slack.yml`: downloads `claude-digest` and posts it to Slack with `post_digest_slack.py`: the title and executive highlights as the channel message, the detailed changes as thread replies (split to stay within Slack's message limits).
 
 Two orchestration workflows are also included:
 
@@ -151,4 +151,5 @@ Required repository secrets:
 
 - `ALTINN_GITHUB_TOKEN`: GitHub token used by the aggregator when calling the GitHub API.
 - `CLAUDE_CODE_OAUTH_TOKEN`: Claude subscription token used by `claude -p`. Generate it with `claude setup-token` (valid for one year) and rotate before it expires.
-- `SLACK_WEBHOOK_URL`: Slack incoming webhook URL.
+- `SLACK_BOT_TOKEN`: Slack app bot token (`xoxb-…`) with the `chat:write` scope. Invite the bot to the target channel.
+- `SLACK_CHANNEL_ID`: ID of the channel to post to (for example `C0123456789`).

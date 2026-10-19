@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import changelog_aggregator as ca
 import build_digest_prompt as bdp
+import post_digest_slack as pds
 
 
 QUIET = ca.Progress(quiet=True)
@@ -503,6 +504,53 @@ class ChangelogAggregatorTests(unittest.TestCase):
             )
             self.assertNotIn("Replace repository heading `Altinn/default`", prompt)
             self.assertTrue(prompt.endswith("RUN_CONTENT\n"))
+
+
+class PostDigestSlackTests(unittest.TestCase):
+    DIGEST = (
+        "# Altinn Changelog - week 39\n\n"
+        "## Executive Highlights\n\n- Big feature\n\n"
+        "## Detailed Changes\n\n### Repo A\n\n- Detail A\n\n"
+        "---\n\n<sub>Organization: altinn</sub>\n"
+    )
+
+    def test_split_digest_separates_title_highlights_and_details(self):
+        title, highlights, details = pds.split_digest(self.DIGEST)
+        self.assertEqual(title, "Altinn Changelog - week 39")
+        self.assertEqual(highlights, "- Big feature")
+        self.assertTrue(details.startswith("## Detailed Changes"))
+        self.assertNotIn("Executive Highlights", details)
+        self.assertIn("Organization: altinn", details)
+
+    def test_build_messages_puts_highlights_in_parent_and_details_in_thread(self):
+        messages = pds.build_messages(self.DIGEST, "https://example.test/run")
+        self.assertEqual(len(messages), 2)
+        parent = messages[0]["blocks"][0]["text"]
+        self.assertIn("- Big feature", parent)
+        self.assertIn("[Workflow run](https://example.test/run)", parent)
+        self.assertNotIn("Detail A", parent)
+        self.assertIn("Detail A", messages[1]["blocks"][0]["text"])
+        self.assertEqual(messages[1]["text"], "Altinn Changelog - week 39 (2/2)")
+
+    def test_build_messages_without_highlights_posts_body_in_thread(self):
+        messages = pds.build_messages("# Title\n\n## Detailed Changes\n\n- Item\n")
+        self.assertEqual(messages[0]["blocks"][0]["text"], "# Title\n\n_Details in thread_")
+        self.assertIn("- Item", messages[1]["blocks"][0]["text"])
+
+    def test_chunk_markdown_respects_limit_and_keeps_all_content(self):
+        sections = [f"### Repo {i}\n" + "\n".join(f"- item {i}-{j}" for j in range(20)) for i in range(10)]
+        text = "\n\n".join(sections)
+        chunks = pds.chunk_markdown(text, limit=300)
+        self.assertGreater(len(chunks), 1)
+        self.assertTrue(all(len(chunk) <= 300 for chunk in chunks))
+        joined = "\n".join(chunks)
+        for i in range(10):
+            for j in range(20):
+                self.assertIn(f"- item {i}-{j}", joined)
+
+    def test_chunk_markdown_splits_overlong_lines(self):
+        chunks = pds.chunk_markdown("x" * 250, limit=100)
+        self.assertEqual([len(chunk) for chunk in chunks], [100, 100, 50])
 
 
 if __name__ == "__main__":
